@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国银行汇率数据</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #1428a0 0%, #1e3c72 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            font-weight: bold;
+            border-radius: 10px 10px 0 0 !important;
+        }
+        .rate-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1e3c72;
+        }
+        .rate-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .date-picker {
+            border-radius: 5px;
+            border: 1px solid #ced4da;
+            padding: 8px 12px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+        }
+        .footer {
+            background-color: #1e3c72;
+            color: white;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+        .footer a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .chart-container {
+            width: 100%;
+            height: 300px;
+            margin-top: 30px;
+        }
+        .nav-tabs .nav-link {
+            border: none;
+            color: #495057;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-link.active {
+            color: #1e3c72;
+            border-bottom: 3px solid #1e3c72;
+            background-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <!-- 页头 -->
+    <div class="header text-center">
+        <div class="container">
+            <h1><i class="bi bi-currency-exchange me-2"></i>中国银行汇率数据</h1>
+            <p class="lead">实时获取欧元和美元的最新汇率信息</p>
+        </div>
+    </div>
+    
+    <!-- 主要内容 -->
+    <div class="container mb-5">
+        <!-- 日期筛选 -->
+        <div class="row mb-4">
+            <div class="col-md-6 offset-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-center mb-3">按日期查询汇率</h5>
+                        <div class="d-flex">
+                            <input type="date" id="datePicker" class="form-control date-picker me-2">
+                            <button id="searchBtn" class="btn btn-primary">
+                                <i class="bi bi-search"></i> 查询
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 最新汇率展示 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-currency-euro me-2"></i>欧元 (EUR)</span>
+                        <span id="eurDate" class="badge bg-light text-dark"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="rate-label">现汇买入价</div>
+                                <div id="eurSpotBuy" class="rate-value"></div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="rate-label">现汇卖出价</div>
+                                <div id="eurSpotSell" class="rate-value"></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="rate-label">现钞买入价</div>
+                                <div id="eurCashBuy" class="rate-value"></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="rate-label">现钞卖出价</div>
+                                <div id="eurCashSell" class="rate-value"></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <div class="rate-label">中行折算价</div>
+                            <div id="eurBocConversion" class="rate-value"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-currency-dollar me-2"></i>美元 (USD)</span>
+                        <span id="usdDate" class="badge bg-light text-dark"></span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 mb-3">
+                                <div class="rate-label">现汇买入价</div>
+                                <div id="usdSpotBuy" class="rate-value"></div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="rate-label">现汇卖出价</div>
+                                <div id="usdSpotSell" class="rate-value"></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="rate-label">现钞买入价</div>
+                                <div id="usdCashBuy" class="rate-value"></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="rate-label">现钞卖出价</div>
+                                <div id="usdCashSell" class="rate-value"></div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <div class="rate-label">中行折算价</div>
+                            <div id="usdBocConversion" class="rate-value"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 历史数据标签页 -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="text-center mb-4">汇率历史数据</h3>
+                <ul class="nav nav-tabs mb-3" id="historyTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" 
+                                type="button" role="tab" aria-controls="recent" aria-selected="true">
+                            最近10条记录
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="daily-tab" data-bs-toggle="tab" data-bs-target="#daily" 
+                                type="button" role="tab" aria-controls="daily" aria-selected="false">
+                            日均汇率
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="historyTabContent">
+                    <div class="tab-pane fade show active" id="recent" role="tabpanel" aria-labelledby="recent-tab">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>货币</th>
+                                        <th>现汇买入价</th>
+                                        <th>现钞买入价</th>
+                                        <th>现汇卖出价</th>
+                                        <th>现钞卖出价</th>
+                                        <th>中行折算价</th>
+                                        <th>发布日期</th>
+                                        <th>发布时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentData">
+                                    <!-- 最近数据将通过JavaScript加载 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="daily" role="tabpanel" aria-labelledby="daily-tab">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>货币</th>
+                                        <th>平均现汇买入价</th>
+                                        <th>平均现钞买入价</th>
+                                        <th>平均现汇卖出价</th>
+                                        <th>平均现钞卖出价</th>
+                                        <th>平均中行折算价</th>
+                                        <th>记录数</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dailyData">
+                                    <!-- 日均数据将通过JavaScript加载 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <div class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>中国银行汇率数据API</h5>
+                    <p>本服务提供中国银行外汇牌价数据的实时查询与历史追踪。数据每两小时自动更新一次。</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <h5>相关链接</h5>
+                    <p>
+                        <a href="https://www.boc.cn/sourcedb/whpj/index.html" target="_blank">
+                            <i class="bi bi-link-45deg"></i> 中国银行外汇牌价官方网站
+                        </a>
+                    </p>
+                    <p>
+                        <a href="http://129.159.19.155:8020/docs" target="_blank">
+                            <i class="bi bi-file-earmark-text"></i> API文档
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <hr class="mt-4 mb-4" style="border-color: rgba(255,255,255,0.2);">
+            <div class="text-center">
+                <p>© 2025 中国银行汇率数据服务 | 数据来源：中国银行</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API基础URL
+        const API_BASE_URL = "http://129.159.19.155:8020";
+        
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置日期选择器默认值为今天
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            document.getElementById('datePicker').value = formattedDate;
+            
+            // 获取最新汇率
+            fetchLatestRates();
+            
+            // 获取最近10条记录
+            fetchRecentData();
+            
+            // 获取日均数据
+            fetchDailyData();
+            
+            // 日期查询按钮点击事件
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                const date = document.getElementById('datePicker').value;
+                if (date) {
+                    fetchRatesByDate(date);
+                } else {
+                    alert('请选择日期');
+                }
+            });
+        });
+        
+        // 获取最新汇率
+        function fetchLatestRates() {
+            fetch(`${API_BASE_URL}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // 更新欧元数据
+                    document.getElementById('eurSpotBuy').textContent = data.EUR.spot_buy;
+                    document.getElementById('eurCashBuy').textContent = data.EUR.cash_buy;
+                    document.getElementById('eurSpotSell').textContent = data.EUR.spot_sell;
+                    document.getElementById('eurCashSell').textContent = data.EUR.cash_sell;
+                    document.getElementById('eurBocConversion').textContent = data.EUR.boc_conversion;
+                    document.getElementById('eurDate').textContent = `${data.EUR.publish_date} ${data.EUR.publish_time}`;
+                    
+                    // 更新美元数据
+                    document.getElementById('usdSpotBuy').textContent = data.USD.spot_buy;
+                    document.getElementById('usdCashBuy').textContent = data.USD.cash_buy;
+                    document.getElementById('usdSpotSell').textContent = data.USD.spot_sell;
+                    document.getElementById('usdCashSell').textContent = data.USD.cash_sell;
+                    document.getElementById('usdBocConversion').textContent = data.USD.boc_conversion;
+                    document.getElementById('usdDate').textContent = `${data.USD.publish_date} ${data.USD.publish_time}`;
+                })
+                .catch(error => {
+                    console.error('获取最新汇率时出错:', error);
+                    alert('获取最新汇率数据失败，请稍后再试');
+                });
+        }
+        
+        // 根据日期获取汇率
+        function fetchRatesByDate(date) {
+            fetch(`${API_BASE_URL}/${date}`)
+                .then(response => {
+                    if (response.status === 404) {
+                        alert(`未找到 ${date} 的汇率数据`);
+                        throw new Error('未找到数据');
+                    }
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.EUR && data.EUR.length > 0) {
+                        // 获取第一条数据（最新）
+                        const eurData = data.EUR[0];
+                        
+                        // 更新欧元数据
+                        document.getElementById('eurSpotBuy').textContent = eurData.spot_buy;
+                        document.getElementById('eurCashBuy').textContent = eurData.cash_buy;
+                        document.getElementById('eurSpotSell').textContent = eurData.spot_sell;
+                        document.getElementById('eurCashSell').textContent = eurData.cash_sell;
+                        document.getElementById('eurBocConversion').textContent = eurData.boc_conversion;
+                        document.getElementById('eurDate').textContent = `${eurData.publish_date} ${eurData.publish_time}`;
+                    }
+                    
+                    if (data.USD && data.USD.length > 0) {
+                        // 获取第一条数据（最新）
+                        const usdData = data.USD[0];
+                        
+                        // 更新美元数据
+                        document.getElementById('usdSpotBuy').textContent = usdData.spot_buy;
+                        document.getElementById('usdCashBuy').textContent = usdData.cash_buy;
+                        document.getElementById('usdSpotSell').textContent = usdData.spot_sell;
+                        document.getElementById('usdCashSell').textContent = usdData.cash_sell;
+                        document.getElementById('usdBocConversion').textContent = usdData.boc_conversion;
+                        document.getElementById('usdDate').textContent = `${usdData.publish_date} ${usdData.publish_time}`;
+                    }
+                    
+                    // 更新表格数据
+                    updateRecentTable(data);
+                })
+                .catch(error => {
+                    if (error.message !== '未找到数据') {
+                        console.error('获取日期汇率时出错:', error);
+                        alert('获取汇率数据失败，请稍后再试');
+                    }
+                });
+        }
+        
+        // 获取最近10条记录
+        function fetchRecentData() {
+            fetch(`${API_BASE_URL}/recent10`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    updateRecentTable(data);
+                })
+                .catch(error => {
+                    console.error('获取最近数据时出错:', error);
+                });
+        }
+        
+        // 更新最近数据表格
+        function updateRecentTable(data) {
+            const tableBody = document.getElementById('recentData');
+            tableBody.innerHTML = '';
+            
+            // 合并EUR和USD数据，并按日期时间排序
+            let allData = [];
+            if (data.EUR) {
+                allData = allData.concat(data.EUR.map(item => ({...item})));
+            }
+            if (data.USD) {
+                allData = allData.concat(data.USD.map(item => ({...item})));
+            }
+            
+            // 按日期和时间降序排序
+            allData.sort((a, b) => {
+                const dateA = new Date(`${a.publish_date} ${a.publish_time}`);
+                const dateB = new Date(`${b.publish_date} ${b.publish_time}`);
+                return dateB - dateA;
+            });
+            
+            // 最多显示10条
+            const displayData = allData.slice(0, 10);
+            
+            // 添加到表格
+            displayData.forEach(item => {
+                const row = document.createElement('tr');
+                
+                // 根据货币类型设置行样式
+                if (item.currency === '欧元') {
+                    row.className = 'table-info';
+                } else if (item.currency === '美元') {
+                    row.className = 'table-success';
+                }
+                
+                row.innerHTML = `
+                    <td>${item.currency}</td>
+                    <td>${item.spot_buy}</td>
+                    <td>${item.cash_buy}</td>
+                    <td>${item.spot_sell}</td>
+                    <td>${item.cash_sell}</td>
+                    <td>${item.boc_conversion}</td>
+                    <td>${item.publish_date}</td>
+                    <td>${item.publish_time}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 获取日均数据
+        function fetchDailyData() {
+            fetch(`${API_BASE_URL}/day10`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tableBody = document.getElementById('dailyData');
+                    tableBody.innerHTML = '';
+                    
+                    // 合并EUR和USD数据
+                    let allData = [];
+                    if (data.EUR) {
+                        allData = allData.concat(data.EUR.map(item => ({...item})));
+                    }
+                    if (data.USD) {
+                        allData = allData.concat(data.USD.map(item => ({...item})));
+                    }
+                    
+                    // 按日期降序排序
+                    allData.sort((a, b) => {
+                        return new Date(b.date) - new Date(a.date);
+                    });
+                    
+                    // 添加到表格
+                    allData.forEach(item => {
+                        const row = document.createElement('tr');
+                        
+                        // 根据货币类型设置行样式
+                        if (item.currency === '欧元') {
+                            row.className = 'table-info';
+                        } else if (item.currency === '美元') {
+                            row.className = 'table-success';
+                        }
+                        
+                        row.innerHTML = `
+                            <td>${item.date}</td>
+                            <td>${item.currency}</td>
+                            <td>${item.avg_spot_buy.toFixed(2)}</td>
+                            <td>${item.avg_cash_buy.toFixed(2)}</td>
+                            <td>${item.avg_spot_sell.toFixed(2)}</td>
+                            <td>${item.avg_cash_sell.toFixed(2)}</td>
+                            <td>${item.avg_boc_conversion.toFixed(2)}</td>
+                            <td>${item.records_count}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    console.error('获取日均数据时出错:', error);
+                });
+        }
+    </script>
+</body>
+</html>
